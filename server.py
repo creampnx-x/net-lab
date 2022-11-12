@@ -4,26 +4,25 @@ import random
 
 
 def main():
-    output_format("init server port:")
-    # port = int(get_input())
-    port = 12000
+    port = int(input("init server port:"))
+    # port = 12000
 
     udp_socket = init_socket(port)
     listen(udp_socket)
 
 
 def init_socket(port=8080, ip='', type=socket.SOCK_DGRAM):
-    output_format("开始初始化UDP服务器了...")
+    print("开始初始化UDP服务器了...")
 
     s = socket.socket(socket.AF_INET, type)
     s.bind((ip, port))
 
-    output_format("已经绑定UDP端口了, 端口为: " + str(port))
+    print("已经绑定UDP端口了, 端口为: " + str(port))
     return s
 
 
 def listen(udp_socket=socket.socket()):
-    output_format("开始监听端口请求...")
+    print("开始监听端口请求...")
     create_link(udp_socket)
     accept_data(udp_socket)
 
@@ -65,6 +64,7 @@ def accept_data(udp_socket=socket.socket()):
                 continue
 
         if is_unuse():
+            print(seq_number, "被模拟丢包...")
             continue
 
         udp_socket.sendto(
@@ -93,15 +93,6 @@ def close_link(address, seq_number, udp_socket=socket.socket()):
         print("第四次挥手成功...")
         return True
     return False
-
-
-def get_input():
-    return input()
-
-
-def output_format(s):
-    print(s)
-    return None
 
 
 def is_unuse():

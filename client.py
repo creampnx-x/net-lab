@@ -1,27 +1,42 @@
+import time
+import math
 import socket
 import random
 from threading import Timer
-import time
-import math
 
 
 def main():
-    target_ip = '127.0.0.1'  # input("target server ip: ")
-    target_port = 12000  # int(input("target server port: "))
+    '''this is the entry function of client.'''
+    target_ip = input("target server ip: ")
+    target_port = int(input("target server port: "))
 
+    # init udp socket.
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    # 开始计时
     start_time = time.time()
     print("连接开始, 时间为: ", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+
+    # 建立连接
     create_link(udp_socket, (target_ip, target_port))
+
+    # 传送数据
     transfer_data(udp_socket, (target_ip, target_port))
+
+    # 结束计时
     end_time = time.time()
     print("连接结束, 时间为: ", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     print("整体时间：", end_time - start_time, "ms")
+    '''end of client.'''
 
 
 def create_link(udp_socket=socket.socket(), address=('127.0.0.1', 12000)):
-    init_seq = 1
+    '''create link like tcp, send three handshakes'''
+
+    # 初始数据结构
     syn = 1
+    init_seq = 1
+
     print("第一次握手...")
     udp_socket.sendto(
         b''.join([init_seq.to_bytes(2), syn.to_bytes()]), address)
@@ -29,6 +44,8 @@ def create_link(udp_socket=socket.socket(), address=('127.0.0.1', 12000)):
     print("第二次握手...")
     message, _ = udp_socket.recvfrom(2048)
     sec_seq = int.from_bytes(message[0: 2])
+
+    # 同步标志
     syn = message[2]
 
     if syn != 1:
@@ -37,26 +54,32 @@ def create_link(udp_socket=socket.socket(), address=('127.0.0.1', 12000)):
     if sec_seq != init_seq:
         raise ValueError("握手失败, 检查第二次握手 seq 参数")
 
+    # 第三次同步标志设为 0
     syn = 0
 
     print("第三次握手...")
     udp_socket.sendto(
         b''.join([(sec_seq + 1).to_bytes(2), syn.to_bytes()]), address)
+
+    # 握手结束
     print("握手成功...")
     return True
 
 
 def transfer_data(udp_socket=socket.socket(), address=('127.0.0.1', 12000)):
+    '''send data with bytes arr, the structure like this: [seq(2), syn(1), fin(1)]'''
+
+    # 结束标志
+    fin = 0
+
     # seq 种子
     seed = int(random.random() * 100)
     seq = seed
-    fin = 0
+
     window = {}  # 窗口字典
-    timer_map = {-1: Timer(0, lambda: None)}  # 计时器字典，可优化
     rtt_map = {}  # rtt 字典
-    resend_times = {
-        "send": 0
-    }
+    resend_times = {"send": 0}  # 重发次数引用指针，用于在重发线程中的数据处理
+    timer_map = {-1: Timer(0, lambda: None)}  # 计时器字典，可优化
 
     # 发送数目为 12
     while seq < seed + 12:
@@ -150,7 +173,10 @@ def output_infomation(window, times):
 
 
 def resend_data(seq, address, times, timer_map, rtt_map, resend_times, udp_socket=socket.socket()):
+    '''resend data in timer thread.'''
+
     if times == 2:
+        print(seq, "已经重传两次了...")
         return None
     try:
         udp_socket.sendto(
