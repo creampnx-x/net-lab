@@ -7,8 +7,8 @@ from threading import Timer
 
 def main():
     '''this is the entry function of client.'''
-    target_ip = input("target server ip: ")
-    target_port = int(input("target server port: "))
+    target_ip = '172.27.132.102'  # input("target server ip: ")
+    target_port = 12000  # int(input("target server port: "))
 
     # init udp socket.
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -26,7 +26,7 @@ def main():
     # 结束计时
     end_time = time.time()
     print("连接结束, 时间为: ", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-    print("整体时间：", end_time - start_time, "ms")
+    print("整体时间：", end_time - start_time, "s")
     '''end of client.'''
 
 
@@ -82,7 +82,7 @@ def transfer_data(udp_socket=socket.socket(), address=('127.0.0.1', 12000)):
     timer_map = {-1: Timer(0, lambda: None)}  # 计时器字典，可优化
 
     # 发送数目为 12
-    while seq < seed + 12:
+    while seq < seed + 11:
         '''发送数据结构：[seq(2), syn(1), fin(1)]'''
         resend_times["send"] += 1
         udp_socket.sendto(
@@ -93,8 +93,8 @@ def transfer_data(udp_socket=socket.socket(), address=('127.0.0.1', 12000)):
         seq += 1  # 下一个数据
 
         # 开始计时器
-        timeout = Timer(1, resend_data, (seq, address, 0,
-                        timer_map, rtt_map, resend_times, udp_socket))
+        timeout = Timer(0.1, resend_data, (seq, address, 0,
+                        timer_map, rtt_map, resend_times, rtt_map[seq-1] + 0.1, udp_socket))
         timeout.start()
 
         # 记录计时器
@@ -172,7 +172,7 @@ def output_infomation(window, times):
     return None
 
 
-def resend_data(seq, address, times, timer_map, rtt_map, resend_times, udp_socket=socket.socket()):
+def resend_data(seq, address, times, timer_map, rtt_map, resend_times, _time, udp_socket=socket.socket()):
     '''resend data in timer thread.'''
 
     if times == 2:
@@ -183,10 +183,10 @@ def resend_data(seq, address, times, timer_map, rtt_map, resend_times, udp_socke
             b''.join([seq.to_bytes(2), int(0).to_bytes(), (0).to_bytes()]), address)
         resend_times["send"] += 1
 
-        rtt_map[seq] = time.time()
+        rtt_map[seq] = _time
 
-        timeout = Timer(1, resend_data,
-                        (seq, address, times + 1, timer_map, rtt_map, resend_times, udp_socket))
+        timeout = Timer(0.1, resend_data,
+                        (seq, address, times + 1, timer_map, rtt_map, resend_times, _time + 0.18, udp_socket))
         timer_map[seq] = timeout
 
         timeout.start()

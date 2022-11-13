@@ -1,5 +1,22 @@
 # net-lab
 
+## 环境
+
+### 代码运行环境
+
+```bash
+python --version
+> 3.11.0
+```
+
+### 程序编写平台
+
+windows 11
+
+### 代码版本管理
+
+git: <https://github.com/creampnx-x/net-lab>
+
 ## 流程
 
 ### 服务端
