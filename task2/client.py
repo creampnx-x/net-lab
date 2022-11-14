@@ -1,3 +1,4 @@
+import sys
 import time
 import math
 import socket
@@ -7,8 +8,16 @@ from threading import Timer
 
 def main():
     '''this is the entry function of client.'''
-    target_ip = '172.27.132.102'  # input("target server ip: ")
-    target_port = 12000  # int(input("target server port: "))
+
+    target_port = 12000
+    target_ip = '172.27.132.102'
+
+    if len(sys.argv) >= 2:
+        target_ip = sys.argv[0]
+        target_port = int(sys.argv[1])
+    elif len(sys.argv) == 0:
+        target_ip = input("target server ip: ")
+        target_port = int(input("target server port: "))
 
     # init udp socket.
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
